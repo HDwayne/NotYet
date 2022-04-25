@@ -50,7 +50,7 @@ NotYet est une application Windows (WPF) qui permet l'accéder aux emplois du te
 <p align="center">bouton "GROUPE" pour accéder aux paramètres</p>
 <br /><br /><br /><br /><br /><br /><br /><br /><br />
 <p align="center">ensemble des groupes de l'UT3</p>
-<br /><br /><br /><br /><br /><br /><br /><br /><br />
+<br /><br /><br /><br /><br /><br /><br /><br />
 
 # ⚠️ Avertissement
 
