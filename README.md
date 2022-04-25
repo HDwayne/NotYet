@@ -7,7 +7,7 @@
 
 [INFORMATION](https://github.com/HDwayne/NotYet/#-information) • 
 [INTERFACE](https://github.com/HDwayne/NotYet/#-interface) • 
-[AVERTISSEMENT](https://github.com/HDwayne/NotYet/#-avertissement)
+[AVERTISSEMENT](https://github.com/HDwayne/NotYet/#-avertissement) 
 
 <a href='https://github.com/HDwayne/NotYet/releases'>
   
