@@ -23,7 +23,7 @@
 
 > L'application est disponible en téléchargement ! 🚀
 
-# 🧐 Inforamtion
+# 🧐 Information
 
 NotYet est une application Windows (WPF) qui permet l'accéder aux emplois du temps celcat de l'université Paul Sabatier UT3.
 
