@@ -92,7 +92,7 @@
 
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock HorizontalAlignment="Left" Margin="4 0 0 4" FontSize="20" Style="{StaticResource titleText}">Groupes</TextBlock>
-                                    <Button x:Name="BtnGetGroup" Margin="4 0 0 0" MaxHeight="24" Style="{StaticResource buttonRoundBorder}" Visibility="Hidden" Content="Actualiser" Click="BtnGetGroupe" />
+                                    <Button x:Name="BtnGetGroup" Margin="4 0 0 0" MaxHeight="24" Style="{StaticResource buttonRoundBorder}" Content="Actualiser" Click="BtnGetGroupe" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -114,6 +114,17 @@
                             <TextBlock x:Name="WipeDataText" Visibility="Hidden" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource normalText}">Suppression des données...</TextBlock>
                             <TextBlock x:Name="loadGroupText" Visibility="Hidden" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource normalText}">Chargement de la liste de groupes...</TextBlock>
                             <TextBlock x:Name="RefreshGroupText" Visibility="Hidden" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource normalText}">Obtention des groupes depuis Celcat...</TextBlock>
+                            <StackPanel x:Name="PutToDataBase" Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden">
+                                <TextBlock  Style="{StaticResource normalText}">Ajout dans la base de données...</TextBlock>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Style="{StaticResource normalText}">(</TextBlock>
+                                    <TextBlock x:Name="PutToDataBaseNb" Text="OO" Style="{StaticResource normalText}"/>
+                                    <TextBlock Style="{StaticResource normalText}">/</TextBlock>
+                                    <TextBlock x:Name="PutToDataBaseTT" Text="OO" Style="{StaticResource normalText}"/>
+                                    <TextBlock Style="{StaticResource normalText}">)</TextBlock>
+                                </StackPanel>
+                                
+                            </StackPanel>
                         </Grid>
                     </Grid>
                 </Grid>

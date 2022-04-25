@@ -4,15 +4,19 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
+
 namespace NotYet
 {
     public partial class MainWindow : Window
     {
         readonly System.Windows.Threading.DispatcherTimer Timer = new();
+        private CalendarDay calendar;
+        public static MainWindow AppWindow;
 
         public MainWindow()
         {
-            this.Loaded += new RoutedEventHandler(Window_Loaded);
+            AppWindow = this;
+            Loaded += new RoutedEventHandler(Window_Loaded);
 
             Properties.Settings.Default.Day = DateTime.Now;
             if (((int)Properties.Settings.Default.Day.DayOfWeek == 0) && !Properties.Settings.Default.WeekendWork)
@@ -29,6 +33,7 @@ namespace NotYet
 
             SetDaySelector();
             SetDay();
+            SetGroupeData();
 
             Timer.Tick += new EventHandler(Timer_Click);
             Timer.Interval = new TimeSpan(0, 0, 1);
@@ -38,31 +43,30 @@ namespace NotYet
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             var desktopWorkingArea = SystemParameters.WorkArea;
-            this.Left = desktopWorkingArea.Right - this.Width - 5;
-            this.Top = desktopWorkingArea.Bottom - this.Height - 5;
-
-
+            Left = desktopWorkingArea.Right - Width - 5;
+            Top = desktopWorkingArea.Bottom - Height - 5;
         }
 
         private void Timer_Click(object sender, EventArgs e)
         {
-            var calendar = DB.DbToClass(Properties.Settings.Default.Day, Properties.Settings.Default.Groupe);
-            var currentH = TimeOnly.FromDateTime(DateTime.Now);
-            var goal = calendar.GetLastHourClasses();
-            if (goal > currentH)
+            if (calendar is not null)
             {
-                var diff = goal - currentH;
-                TimerH.Text = diff.Hours.ToString();
-                TimerM.Text = diff.Minutes.ToString();
-                TimerS.Text = diff.Seconds.ToString();
+                var currentH = TimeOnly.FromDateTime(DateTime.Now);
+                var goal = calendar.GetLastHourClasses();
+                if (goal > currentH)
+                {
+                    var diff = goal - currentH;
+                    TimerH.Text = diff.Hours.ToString();
+                    TimerM.Text = diff.Minutes.ToString();
+                    TimerS.Text = diff.Seconds.ToString();
+                }
+                else
+                {
+                    TimerH.Text = "00";
+                    TimerM.Text = "00";
+                    TimerS.Text = "00";
+                }
             }
-            else
-            {
-                TimerH.Text = "00";
-                TimerM.Text = "00";
-                TimerS.Text = "00";
-            }
-            
         }
 
         private void SetDaySelector()
@@ -173,7 +177,6 @@ namespace NotYet
                 {
                     Properties.Settings.Default.Day = DateTime.Parse(day);
                     Properties.Settings.Default.Save();
-
                     SetDay();
                 }
             }
@@ -182,7 +185,8 @@ namespace NotYet
         private void SetlistClasses()
         {
             listClasses.ItemsSource = null;
-            var data = new CalendarDayInterface(Properties.Settings.Default.Day, Properties.Settings.Default.Groupe);
+            calendar = DB.DbToClass(Properties.Settings.Default.Day, Properties.Settings.Default.Groupe);
+            var data = new CalendarDayInterface(calendar);
             if (data.Count == 0)
             {
                 NoClassesText.Visibility = Visibility.Visible;
@@ -199,6 +203,9 @@ namespace NotYet
             InternetError.Visibility = Visibility.Hidden;
             refreshText.Visibility = Visibility.Hidden;
             LastUpdateTextDate.Visibility = Visibility.Hidden;
+            
+            DayText.Text = Properties.Settings.Default.Day.ToString("dddd, dd MMMM yyyy");
+            SetDaySelector();
 
             if (Properties.Settings.Default.Groupe == "none")
             {
@@ -214,7 +221,7 @@ namespace NotYet
                 LastUpdateDate.Text = Properties.Settings.Default.LastUpdate.ToString();
                 LastUpdateTextDate.Visibility = Visibility.Visible;
 
-                if (Properties.Settings.Default.LastUpdate.Hour != DateTime.Now.Hour || DB.DbToClass(Properties.Settings.Default.Day, Properties.Settings.Default.Groupe).GetAllClasses().Count == 0)
+                if (Properties.Settings.Default.LastUpdate.Hour != DateTime.Now.Hour || !DB.IsWeekStore(Properties.Settings.Default.Day, Properties.Settings.Default.Groupe))
                 {
                     LastUpdateTextDate.Visibility = Visibility.Hidden;
 
@@ -234,8 +241,6 @@ namespace NotYet
                 }
                 SetlistClasses();
             }
-            DayText.Text = Properties.Settings.Default.Day.ToString("dddd, dd MMMM yyyy");
-            SetDaySelector();
         }
 
         private void Button_setting(object sender, RoutedEventArgs e)
@@ -245,58 +250,22 @@ namespace NotYet
                 timeSelector.Visibility = Visibility.Hidden;
                 dayContent.Visibility = Visibility.Hidden;
                 settingPage.Visibility = Visibility.Visible;
-                if (DB.IsGpTableEmpty() || listGroupes.ItemsSource == null) {
-                    BtnGetGroup.Visibility = Visibility.Visible;
-                } else {
-                    BtnGetGroup.Visibility = Visibility.Hidden;
-                }
             } else
             {
                 settingPage.Visibility = Visibility.Hidden;
                 timeSelector.Visibility = Visibility.Visible;
                 dayContent.Visibility = Visibility.Visible;
-                BtnGetGroup.Visibility = Visibility.Hidden;
             }
         }
 
-        private async void Setgroupe(object sender, RoutedEventArgs e)
+        private void Setgroupe(object sender, RoutedEventArgs e)
         {
             if (sender is Button rb)
             {
                 string? groupe = rb.Tag.ToString();
                 if (groupe is not null)
                 {
-                    InternetError.Visibility = Visibility.Hidden;
-                    refreshText.Visibility = Visibility.Hidden;
-                    LastUpdateTextDate.Visibility = Visibility.Hidden;
                     selectGp.Visibility = Visibility.Hidden;
-
-                    if (DB.IsGpTableEmpty())
-                    {
-                        LoadDataGp.Visibility = Visibility.Visible;
-                        dayselectm4.IsEnabled = false;
-                        dayselectm3.IsEnabled = false;
-                        dayselectm2.IsEnabled = false;
-                        dayselectm1.IsEnabled = false;
-                        dayselect0.IsEnabled = false;
-                        dayselect1.IsEnabled = false;
-                        dayselect2.IsEnabled = false;
-                        dayselect3.IsEnabled = false;
-                        dayselect4.IsEnabled = false;
-                        Task task = Task.Run(() => DB.RefreshGroupeTable());
-                        await task;
-                        dayselectm4.IsEnabled = true;
-                        dayselectm3.IsEnabled = true;
-                        dayselectm2.IsEnabled = true;
-                        dayselectm1.IsEnabled = true;
-                        dayselect0.IsEnabled = true;
-                        dayselect1.IsEnabled = true;
-                        dayselect2.IsEnabled = true;
-                        dayselect3.IsEnabled = true;
-                        dayselect4.IsEnabled = true;
-                        LoadDataGp.Visibility = Visibility.Hidden;
-                    }
-
                     Properties.Settings.Default.Groupe = groupe;
                     Groupe.Content = Properties.Settings.Default.Groupe;
                     Properties.Settings.Default.Save();
@@ -319,48 +288,71 @@ namespace NotYet
             SetDaySelector();
         }
 
-        private void BtnWipeData(object sender, RoutedEventArgs e)
+        private async void BtnWipeData(object sender, RoutedEventArgs e)
         {
-            listGroupes.ItemsSource = null;
+            listClasses.ItemsSource = null;
             BtnGetGroup.IsEnabled = false;
-            WipeDataText.Visibility = Visibility.Visible;
-            DB.WipeData();
+            BtnGetGroup.IsEnabled = false;
+            Task task = Task.Run(() => DB.WipeData());
+            await task;
             WipeDataText.Visibility = Visibility.Hidden;
             BtnGetGroup.IsEnabled = true;
-            BtnGetGroup.Visibility = Visibility.Visible;
+            BtnGetGroup.IsEnabled = true;
         }
 
         private async void BtnGetGroupe(object sender, RoutedEventArgs e)
         {
-            BtnGetGroup.Visibility = Visibility.Hidden;
             BtnWipe.IsEnabled = false;
-            RefreshGroupText.Visibility = Visibility.Visible;
-            Task task = Task.Run(() => DB.RefreshGroupeTable());
-            await task;
-            RefreshGroupText.Visibility = Visibility.Hidden;
+            BtnGetGroup.IsEnabled = false;
+            listGroupes.ItemsSource = null;
 
-            loadGroupText.Visibility = Visibility.Visible;
-            Task task2 = Task.Run(() => {
-                var data = new GroupeInterface();
-
-                Dispatcher.Invoke(() => {
-                    listGroupes.ItemsSource = data;
-                });
+            Task<string?> task = Task.Run(() => {
+                Dispatcher.Invoke(() => RefreshGroupText.Visibility = Visibility.Visible);
+                var jsonstring = Celcat.GetGroupes();
+                Dispatcher.Invoke(() => RefreshGroupText.Visibility = Visibility.Hidden);
+                return jsonstring;
             });
-            await task2;
-            loadGroupText.Visibility = Visibility.Hidden;
+            await task;
+
+            Task task1 = Task.Run(() => {
+                Dispatcher.Invoke(() => PutToDataBase.Visibility = Visibility.Visible);
+                DB.RefreshGroupeTable(task.Result, PutToDataBaseNb, PutToDataBaseTT);
+                Dispatcher.Invoke(() => PutToDataBase.Visibility = Visibility.Hidden);
+            });
+            await task1;
+            
+            SetGroupeData();
+            
             BtnWipe.IsEnabled = true;
+            BtnGetGroup.IsEnabled = true;
+        }
+
+        private async void SetGroupeData()
+        {
+            if (!DB.IsGpTableEmpty())
+            {
+                Task task = Task.Run(() => {
+                    Dispatcher.Invoke(() => loadGroupText.Visibility = Visibility.Visible);
+                    var data = new GroupeInterface();
+
+                    Dispatcher.Invoke(() => {
+                        loadGroupText.Visibility = Visibility.Hidden;
+                        listGroupes.ItemsSource = data;
+                    });
+                });
+                await task;
+            }
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
-            this.DragMove();
+            DragMove();
         }
 
         private void StateMinimize(object sender, MouseButtonEventArgs e)
         {
-            this.WindowState = WindowState.Minimized;
+            WindowState = WindowState.Minimized;
         }
 
         private void StateExit(object sender, MouseButtonEventArgs e)

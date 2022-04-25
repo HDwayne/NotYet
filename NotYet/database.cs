@@ -2,15 +2,32 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Data.SQLite;
+using System.IO;
+using System.Windows.Controls;
 
 namespace NotYet;
 
 public class DB
 {
+
+    static void CreateAndOpenDb()
+    {
+        if (!File.Exists(Properties.Resources.dbconnect))
+        {
+            SQLiteConnection.CreateFile(Properties.Resources.dbconnect);
+        }
+        using (SQLiteConnection db = new SQLiteConnection(string.Format("Data Source={0};Version=3;", Properties.Resources.dbconnect)))
+        {
+            db.Open();
+
+
+        }
+    }
+
     private static DataTable? Get_DataTable(string SqlCommande)
     {
-        using (SqlConnection db = new SqlConnection(Properties.Resources.dbconnect))
+        using (SQLiteConnection db = new SQLiteConnection(string.Format("Data Source={0};Version=3;", Properties.Resources.dbconnect)))
         {
             try
             {
@@ -18,7 +35,7 @@ public class DB
                 if (db is not null)
                 {
                     var table = new DataTable();
-                    var adapter = new SqlDataAdapter(SqlCommande, db);
+                    var adapter = new SQLiteDataAdapter(SqlCommande, db);
                     try
                     {
                         adapter.Fill(table);
@@ -36,19 +53,19 @@ public class DB
             }
             finally
             {
-                
+
             }
         }
     }
 
-    private static void Execute_SQL(string SqlText)
+    public static void Execute_SQL(string SqlText)
     {
-        using (SqlConnection db = new SqlConnection(Properties.Resources.dbconnect))
+        using (SQLiteConnection db = new SQLiteConnection(string.Format("Data Source={0};Version=3;", Properties.Resources.dbconnect)))
         {
             db.Open();
             if (db is not null)
             {
-                var cmdCommand = new SqlCommand(SqlText, db);
+                var cmdCommand = new SQLiteCommand(SqlText, db);
                 try
                 {
                     cmdCommand.ExecuteNonQuery();
@@ -63,13 +80,15 @@ public class DB
 
     private static void ClasseToDb(Classes classe, string groupe)
     {
-        DataTable? tbl = Get_DataTable($"SELECT TOP 1 * FROM DataTable WHERE [Id] Like '{classe.Id}'");
+        DataTable? tbl = Get_DataTable($"SELECT * FROM DataTable WHERE Id = '{classe.Id}'  LIMIT 1 ");
         if (tbl is not null)
         {
             if (tbl.Rows.Count == 0)
             {
-                var sqlAdd = $"INSERT INTO DataTable ([id],[day],[start],[end],[duration],[backgroundcolor],[textcolor],[salles],[matiere],[groupes],[categorie],[gp_api]) VALUES('{classe.Id}','{classe.Day}','{classe.Start}','{classe.End}','{classe.Duration}','{classe.BackgroundColor}','{classe.TextColor}','{classe.Salles}','{classe.Matiere.Replace("'", "''")}','{classe.Groupes}','{classe.Category}','{groupe}')";
+                var sqlAdd = $"INSERT INTO DataTable (Id,day,start,end,duration,backgroundcolor,textcolor,salles,matiere,groupes,categorie,gp_api) VALUES ('{classe.Id}','{classe.Day}','{classe.Start}','{classe.End}','{classe.Duration}','{classe.BackgroundColor}','{classe.TextColor}','{classe.Salles}','{classe.Matiere.Replace("'", "''")}','{classe.Groupes}','{classe.Category}','{groupe}')";
                 Execute_SQL(sqlAdd);
+                
+
             }
         }
     }
@@ -144,7 +163,7 @@ public class DB
         var auj = DateOnly.FromDateTime(day);
         var DayCal = new CalendarDay();
 
-        DataTable? table = Get_DataTable($"SELECT * FROM DataTable WHERE [day] Like '{auj}' AND [gp_api] Like '{groupe}'");
+        DataTable? table = Get_DataTable($"SELECT * FROM DataTable WHERE day = '{auj}' AND gp_api = '{groupe}'");
         if (table is not null)
         {
             foreach (DataRow row in table.Rows)
@@ -159,7 +178,7 @@ public class DB
                 string matiere = (string)row["matiere"];
                 string groupes = (string)row["groupes"];
                 string categorie = (string)row["categorie"];
-     
+
                 var obj = new Classes(id, auj2, start, end, bc, tc, salles, matiere, groupes, categorie);
                 DayCal.AddClasses(obj);
             }
@@ -167,18 +186,42 @@ public class DB
         return DayCal;
     }
 
-    public static void RefreshGroupeTable()
+    public static bool IsWeekStore(DateTime day, string groupe)
     {
-        Execute_SQL($"TRUNCATE TABLE GpTable");
-        var jsonstring = Celcat.GetGroupes();
+        var DayOfWeek = (int)day.DayOfWeek;
+        var firstday = day.AddDays(1 - DayOfWeek);
+        DateOnly date;
+        for (double i = 0; i < 7; i++)
+        {
+            date = DateOnly.FromDateTime(firstday.AddDays(i));
+            var table = Get_DataTable($"SELECT * FROM DataTable WHERE day = '{date}' AND gp_api = '{groupe}'");
+            if (table is not null && table.Rows.Count != 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    public static void RefreshGroupeTable(String? jsonstring, TextBlock TextNB, TextBlock TextTT)
+    {
+        Execute_SQL($"DELETE FROM GpTable");
+
         if (jsonstring is not null)
         {
             dynamic? json = JsonConvert.DeserializeObject(jsonstring);
             if (json is not null)
             {
+                var cpt = 1;
+                TextNB.Dispatcher.Invoke(() => {
+                    TextTT.Text = json["total"];
+                });
                 foreach (var groupes in json["results"])
                 {
-                    Execute_SQL($"INSERT INTO GpTable ([id],[text],[dept]) VALUES('{groupes["id"]}','{groupes["text"]}','{groupes["dept"]}')");
+                    Execute_SQL($"INSERT INTO GpTable (Id,text,dept) VALUES ('{groupes["id"]}','{groupes["text"]}','{groupes["dept"]}')");
+                    cpt++;
+                    TextNB.Dispatcher.Invoke(() => {
+                        TextNB.Text = cpt.ToString();
+                    });
                 }
             }
         }
@@ -209,7 +252,6 @@ public class DB
 
     public static void WipeData()
     {
-        Execute_SQL("TRUNCATE TABLE DataTable");
-        Execute_SQL("TRUNCATE TABLE GpTable");
+        Execute_SQL("DELETE FROM DataTable");
     }
 }

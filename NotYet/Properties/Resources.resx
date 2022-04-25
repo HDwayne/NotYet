@@ -121,6 +121,6 @@
     <value>https://edt.univ-tlse3.fr/calendar2/Home/GetCalendarData</value>
   </data>
   <data name="dbconnect" xml:space="preserve">
-    <value>Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\hdway\Documents\Csharp\NotYet\NotYet\data\Data.mdf;Integrated Security=True</value>
+    <value>.\data\DataDB.db</value>
   </data>
 </root>

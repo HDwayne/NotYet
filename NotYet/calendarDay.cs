@@ -30,6 +30,7 @@ public class CalendarDay
 
     public List<Classes> GetAllClasses()
     {
+        AllClasses.Sort((x, y) => x.Start.CompareTo(y.Start));
         return AllClasses;
     }
 
@@ -42,12 +43,11 @@ public class CalendarDay
 
 public class CalendarDayInterface : ObservableCollection<Classes>
 {
-    public CalendarDayInterface(DateTime day, string groupe)
+    public CalendarDayInterface(CalendarDay calendar)
     {
-        CalendarDay calendar = DB.DbToClass(day, groupe);
         foreach (Classes c in calendar.GetAllClasses())
         {
-            this.Add(c);
+            Add(c);
         }
     }
 }

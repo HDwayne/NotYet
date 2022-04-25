@@ -70,7 +70,7 @@ namespace NotYet.Properties {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\hdway\Documents\Csharp\NotYet\NotYet\data\Data.mdf;Integrated Security=True.
+        ///   Recherche une chaîne localisée semblable à .\data\DataDB.db.
         /// </summary>
         public static string dbconnect {
             get {
